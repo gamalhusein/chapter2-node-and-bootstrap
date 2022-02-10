@@ -1,65 +1,130 @@
-//pemanggilan package express (versi ES5)>versi ES6 import express from 'express'
+// Pemanggilan package express
 const express = require('express')
 
-//menggunakan package express
+// Menggunakan package express
 const app = express()
 
-//mengkondisikan jika sudah login
-const isLogin = true
-app.get('/blog', function(request, response){
-    response.render('blog', {isLogin: isLogin})
-})
-
-//set engine template -> sebelum menampilkan file hbs menggunakan code di bawah ini
+// set template engine
 app.set('view engine', 'hbs')
 
-//untuk megakses seluruh direktori file yang dipunya jika hanya menggunakan '/' kalau mau spesifik ke '/namafile'
 app.use('/public', express.static(__dirname + '/public'))
-app.use(express.urlencoded({ extended : false})) // <- untuk mengakses form yang dimasukkan user
+app.use(express.urlencoded({ extended: false }))
 
+// true => sudah login
+// false => belum login
+const isLogin = true
 
-//untuk memproses form yang dimasukkan oleh user
-app.post('/blog', function (request, response){
-    let title = request.body.title
-    let content = request.body.content
+const blogs = [
+    {
+        title: "Pasar Coding di Indonesia Dinilai Masih Menjanjikan",
+        content: "Ketimpangan sumber daya manusia (SDM) di sektor digital masih menjadi isu yang belum terpecahkan. Berdasarkan penelitian ManpowerGroup, ketimpangan SDM global, termasuk Indonesia, meningkat dua kali lipat dalam satu dekade terakhir. Lorem ipsum, dolor sit amet consectetur adipisicing elit. Quam, molestiae numquam! Deleniti maiores expedita eaque deserunt quaerat! Dicta, eligendi debitis?",
+        author: "Ichsan Emrald Alamsyah",
+        posted_at: "12 Jul 2021 22:30 WIB"
+    }
+]
 
-    console.log(`data title : ${title}`);
-    console.log(`data title : ${content}`);
+let month = [
+    'January',
+    'February',
+    'March',
+    'April',
+    'May',
+    'June',
+    'July',
+    'August',
+    'September',
+    'October',
+    'November',
+    'December'
+]
+
+// Set endpoint
+app.get('/', function (req, res) {
+    res.send("Hello World")
+})
+
+app.get('/home', function (req, res) {
+    res.render('index')
+})
+
+app.get('/blog', function (req, res) {
+
+    console.log(blogs) // hanya ada 4 properti
+
+    let dataBlogs = blogs.map(function (data) {
+        return {
+            ...data,
+            isLogin: isLogin
+        }
+    })
+
+    res.render('blog', { isLogin: isLogin, blogs: dataBlogs })
+})
+
+app.get('/add-blog', function (req, res) {
+
+    if (!isLogin) {
+        res.redirect('/home')
+    }
+
+    res.render('form-blog')
+})
+
+app.post('/blog', function (req, res) {
+    let title = req.body.title
+    let content = req.body.content
+    let date = new Date()
+
+    let blog = {
+        title: title,
+        content,
+        author: "Ichsan Emrald Alamsyah",
+        posted_at: getFullTime(date)
+    }
+
+    blogs.push(blog)
+
+    res.redirect('/blog')
 
 })
-//set endpoint
-app.get('/', function (request, response){
-    response.send("hello world")
-})
-//untuk menampilkan menu index.hbs
-app.get('/home', function(request, response){
-    response.render('index')
-})
 
-//untuk menampilkan menu blog.hbs
-app.get('/blog', function(request, response){
-    response.render('blog')
-})
-
-//untuk menampilkan menu contact.hbs
-app.get('/contact-me', function(request, response){
-    response.render('contact')
-})
-//untuk menampilkan menu contact.hbs
-app.get('/add-blog', function(request, response){
-    response.render('form-blog')
-})
-//menampilkan data blog detail sesuai dengan judul nya atau dengan id yang dibuat
-app.get('/blog/:id', function (request, response){
-    let id = request.params.id
-
+app.get('/blog/:id', function (req, res) {
+    let id = req.params.id
     console.log(`Id dari client : ${id}`)
 
-    response.render('blog-detail', {id : id})
+    res.render('blog-detail', { id: id })
 })
 
-//konfigurasi port aplikasi
-const port = 5000
-app.listen(port, function(){
-    console.log(`Server is Running on Port ${port}`);
+app.get('/delete-blog/:index', function (req, res) {
+    let index = req.params.index
+
+    console.log(`Index data : ${index}`)
+
+    blogs.splice(index, 1)
+    res.redirect('/blog')
 })
+
+app.get('/contact-me', function (req, res) {
+    res.render('contact')
+})
+
+// Konfigurasi port aplikasi
+const port = 5000
+app.listen(port, function () {
+    console.log(`Server running on port ${port}`);
+})
+
+function getFullTime(time) {
+    let date = time.getDate()
+    let monthIndex = time.getMonth()
+    let year = time.getFullYear()
+
+    let hours = time.getHours()
+    let minutes = time.getMinutes()
+
+    if (minutes < 10) {
+        minutes = '0' + minutes
+    }
+
+    return `${date} ${month[monthIndex]} ${year} ${hours}:${minutes} WIB`
+}
